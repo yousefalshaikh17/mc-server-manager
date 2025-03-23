@@ -6,8 +6,8 @@ import time
 import threading
 
 # Load config
-from . import config
-mcrcon_path = config["mcrcon_path"]
+from . import get_config
+mcrcon_path = get_config()["mcrcon_path"]
 
 class JavaServerManager:
     def __init__(self, working_directory, start_script_path, server_ip="127.0.0.1", server_password=None, max_start_time=180, name="Java Server", connection_timeout=5, server_port=25565, rcon_port=25575):

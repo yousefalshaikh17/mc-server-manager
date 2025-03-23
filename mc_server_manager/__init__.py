@@ -2,9 +2,6 @@ import os
 
 from dotenv import load_dotenv
 
-from .server_manager import JavaServerManager
-__all__ = ["JavaServerManager"]
-
 load_dotenv()
 
 def get_mcrcon_path():
@@ -25,3 +22,11 @@ def load_config():
     return config
 
 config = load_config()
+
+def get_config():
+    return config
+
+__all__ = ["JavaServerManager","get_config"]
+
+# Load after to stop circular import
+from .server_manager import JavaServerManager

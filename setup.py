@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 def read_version():
     with open("mc_server_manager/version.txt", "r") as f:
@@ -12,5 +12,5 @@ setup(
         "python-dotenv",
         "mcstatus"
     ],
-    py_modules=['mc_server_manager']
+    packages=find_packages()
 )
