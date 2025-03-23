@@ -1,10 +1,9 @@
 import subprocess
-from mcstatus import JavaServer
 from process_controller import ProcessController
+from mcstatus import JavaServer
 import math
 import time
 import threading
-import json
 
 # Load config
 from . import config
