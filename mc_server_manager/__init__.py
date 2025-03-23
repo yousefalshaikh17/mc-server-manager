@@ -1,8 +1,6 @@
 import os
-from .server_manager import JavaServerManager
-from dotenv import load_dotenv
 
-__all__ = ["JavaServerManager",]
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -24,3 +22,6 @@ def load_config():
     return config
 
 config = load_config()
+
+from .server_manager import JavaServerManager
+__all__ = ["JavaServerManager","config"]

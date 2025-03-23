@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 def read_version():
     with open("mc_server_manager/version.txt", "r") as f:
