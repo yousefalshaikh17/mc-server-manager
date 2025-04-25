@@ -4,13 +4,10 @@ from mcstatus import JavaServer
 import math
 import time
 import threading
-
-# Load config
-from . import get_config
-mcrcon_path = get_config()["mcrcon_path"]
+from mcrcon import MCRcon
 
 class JavaServerManager:
-    def __init__(self, working_directory, start_script_path, server_ip="127.0.0.1", server_password=None, max_start_time=180, name="Java Server", connection_timeout=5, server_port=25565, rcon_port=25575):
+    def __init__(self, working_directory, start_script_path, server_ip="127.0.0.1", server_port=25565, max_start_time=180, name="Java Server", connection_timeout=5, rcon_port=25575, rcon_password=""):
         """
         Initializes the JavaServerManager instance.
 
@@ -25,19 +22,16 @@ class JavaServerManager:
         - server_port (int): The main Minecraft server port (default: 25565).
         - rcon_port (int or None): The RCON port for remote commands (default: 25575).
         """
+        # JavaServer does some address checks internally to verify validity, so it is run first.
+        self.server = JavaServer(server_ip, port=server_port, timeout=connection_timeout)
         self.name = name
         self.working_directory = working_directory
         self.start_script = start_script_path
         self.ip = server_ip
         self.server_port = server_port
         self.rcon_port = rcon_port
-        self.password = server_password
+        self.rcon_password = rcon_password
         self.max_start_time = max_start_time
-        self.server = JavaServer(self.ip, port=server_port, timeout=connection_timeout)
-
-        # RCON check and warning
-        if mcrcon_path is None:
-            print("[WARNING] RCON path is not configured and certain functions will not work. Configure it by adding 'MCRCON_PATH' to the .env file.")
     
     def get_online_players(self):
         """
@@ -147,8 +141,7 @@ class JavaServerManager:
             time.sleep(1)
         return self.start()
     
-    # @TODO: Move RCON management into its own module
-    def rcon_command(self, command):
+    def run_command(self, command):
         """
         Sends an RCON command to the server.
 
@@ -158,12 +151,17 @@ class JavaServerManager:
         Returns:
         - tuple (bool, str): Success flag and the output from the command execution.
         """
-        if mcrcon_path is None:
-            return False, "Failed because RCON path is not configured. Configure it by adding 'MCRCON_PATH' to the .env file."
 
-        cmd = f'"{mcrcon_path}" -H {self.ip} -P {self.rcon_port} -p {self.password} "{command}"'
-        result = subprocess.run(cmd, capture_output=True, text=True, shell=True)
-        return (result.stderr == "", result.stderr or result.stdout)
+        success = False
+        try:
+            # Uses with to safely disconnect socket
+            with MCRcon(self.ip, self.rcon_password, self.rcon_port) as mcr:
+                output = mcr.command(command)
+                success = True
+        except Exception as E:
+            output = str(E)
+        
+        return success, output
     
     def is_rcon_working(self):
         """
@@ -172,7 +170,7 @@ class JavaServerManager:
         Returns:
         - bool: True if RCON is working, otherwise False.
         """
-        success, _ = self.rcon_command("list")
+        success, _ = self.run_command("list")
         return success  
     
     def save_world(self):
@@ -182,7 +180,7 @@ class JavaServerManager:
         Returns:
         - bool: True if the save command was successful, otherwise False.
         """
-        success, output = self.rcon_command("save-all")
+        success, output = self.run_command("save-all")
         print(f"[Save Attempt] Success: {success}\n{output}")
         return success
     
@@ -196,7 +194,7 @@ class JavaServerManager:
         Returns:
         - bool: True if the message was sent successfully, otherwise False.
         """
-        success, output = self.rcon_command(f"say {message}")
+        success, output = self.run_command(f"say {message}")
         print(f"[Say Attempt] Success: {success}\n{output}")
         return success
     
@@ -213,7 +211,7 @@ class JavaServerManager:
         if self.get_status() == "Offline":
             return False
 
-        success, output = self.rcon_command("stop")
+        success, output = self.run_command("stop")
         print(f"[Stop Attempt] Success: {success}\n{output}")
 
         def force_close():

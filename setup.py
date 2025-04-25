@@ -9,8 +9,8 @@ setup(
     version=read_version(),
     install_requires=[
         "process-controller @ git+https://github.com/yousefalshaikh17/system-process-controller.git",
-        "python-dotenv",
-        "mcstatus"
+        "mcstatus",
+        "mcrcon"
     ],
     packages=find_packages()
 )
