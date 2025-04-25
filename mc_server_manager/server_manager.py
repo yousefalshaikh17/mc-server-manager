@@ -27,8 +27,6 @@ class JavaServerManager:
         self.name = name
         self.working_directory = working_directory
         self.start_script = start_script_path
-        self.ip = server_ip
-        self.server_port = server_port
         self.rcon_port = rcon_port
         self.rcon_password = rcon_password
         self.max_start_time = max_start_time
@@ -155,7 +153,7 @@ class JavaServerManager:
         success = False
         try:
             # Uses with to safely disconnect socket
-            with MCRcon(self.ip, self.rcon_password, self.rcon_port) as mcr:
+            with MCRcon(self.server.address.host, self.rcon_password, self.rcon_port) as mcr:
                 output = mcr.command(command)
                 success = True
         except Exception as E:
