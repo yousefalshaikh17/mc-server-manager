@@ -6,6 +6,7 @@ import time
 import threading
 from mcrcon import MCRcon
 from pathlib import Path
+import platform
 
 class MCServerManagerException(Exception):
     pass
@@ -55,8 +56,8 @@ class JavaServerManager:
         # JavaServer does some address checks internally to verify validity, so it is run first.
         self.server = JavaServer(server_ip, port=server_port, timeout=connection_timeout)
         self.name = name
-        self.working_directory = working_directory
-        self.start_script = start_script_path
+        self.working_directory = working_directory.resolve()
+        self.start_script = start_script_path.resolve()
         self.rcon_port = rcon_port
         self.rcon_password = rcon_password
         self.max_start_seconds = max_start_seconds
@@ -149,7 +150,7 @@ class JavaServerManager:
         """
         def filter(info: dict):
 
-            if info['cwd'] is None or Path(info['cwd']) != self.working_directory:
+            if info['cwd'] is None or Path(info['cwd']).resolve() != self.working_directory:
                 return False
             
             if 'java' not in info['name'].lower():
@@ -209,7 +210,20 @@ class JavaServerManager:
         if force_restart:
             self.force_stop()
 
-        subprocess.Popen(["cmd", "/c", str(self.start_script)], creationflags=subprocess.CREATE_NEW_CONSOLE)
+
+        # Windows & Linux support
+        if platform.system() == "Windows":
+            subprocess.Popen(
+                ["cmd", "/c", str(self.start_script)],
+                creationflags=subprocess.CREATE_NEW_CONSOLE,
+                cwd=self.working_directory
+            )
+        else:
+            subprocess.Popen(
+                ["java", "-jar", str(self.start_script)],
+                cwd=self.working_directory
+            )
+
         return True, "Server started."
     
     def restart(self, force_close=False, save=False):
