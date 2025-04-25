@@ -5,6 +5,8 @@ import math
 import time
 import threading
 from mcrcon import MCRcon
+import os
+
 class MCServerManagerException(Exception):
     pass
 
@@ -44,6 +46,61 @@ class JavaServerManager:
         self.rcon_password = rcon_password
         self.max_start_seconds = max_start_seconds
     
+    @classmethod
+    def from_server_properties(
+        cls,
+        working_directory: str,
+        start_script_path: str,
+        **kwargs
+    ):
+        props_path = os.path.join(working_directory, "server.properties")
+        if not os.path.exists(props_path):
+            raise FileNotFoundError(f"No server.properties found in {working_directory}")
+        
+        config = {}
+        with open(props_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                config[key.strip()] = value.strip()
+
+        if config.get("enable-rcon", "false").lower() != "true":
+            raise MCServerManagerException("RCON is not enabled in server.properties")
+
+        rcon_password = kwargs.get('rcon_password', config.get("rcon.password", ""))
+        rcon_port = int(kwargs.get("rcon_port", config.get("rcon.port", 25575)))
+
+        return cls(
+            working_directory=working_directory,
+            start_script_path=start_script_path,
+            server_ip=kwargs.get("server_ip", "127.0.0.1"),
+            server_port=int(kwargs.get("server_port", config.get("server_port", 25565))),
+            max_start_seconds=kwargs.get("max_start_seconds", 180),
+            name=kwargs.get("name", "Java Server"),
+            connection_timeout=kwargs.get("connection_timeout", 5),
+            rcon_port=rcon_port,
+            rcon_password=rcon_password
+        )
+
+    def __str__(self):
+        """
+        Provide a user-friendly string representation of the instance.
+        """
+        return f'''
+            JavaServerManager({self.name})
+            Working Directory: {self.working_directory}
+            Start Script Path: {self.start_script}
+            Server IP: {self.server.address.host}
+            Server Port: {self.server.address.port}
+            RCON Port: {self.rcon_port}
+            RCON Password: {'****' if self.rcon_password else 'Not Set'}
+            Max Start Time (seconds): {self.max_start_seconds}
+            Connection Timeout: {self.server.timeout} seconds
+            '''
+
+
     def get_online_players(self):
         """
         Retrieves a list of currently online players using the Query protocol.
