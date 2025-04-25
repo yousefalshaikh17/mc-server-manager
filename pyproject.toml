@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mc-server-manager"
+version = "0.9.0"
+description = "A python minecraft server manager"
+authors = [{ name = "Yousef AlShaikh", email = "yousefalshaikh17@gmail.com" }]
+license = { text = "MIT" }
+dependencies = [
+    "mcstatus",
+    "mcrcon",
+    "process-controller @ git+https://github.com/yousefalshaikh17/system-process-controller.git"
+]
+
+[tool.setuptools]
+packages = ["mc_server_manager"]
