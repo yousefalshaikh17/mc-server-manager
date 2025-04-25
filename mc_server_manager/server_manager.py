@@ -133,6 +133,14 @@ class JavaServerManager:
         - list of Process objects matching the Java process running in the server directory.
         """
         filter = {'name': 'java.exe', 'cwd': self.working_directory}
+        def filter(info: dict):
+            if info['cwd'] != self.working_directory:
+                return False
+            
+            if 'java' not in info['name'].lower():
+                return False
+
+            return True
         return ProcessController.find_processes(filter)
     
     def force_stop(self):
