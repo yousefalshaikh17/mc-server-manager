@@ -7,7 +7,18 @@ import threading
 from mcrcon import MCRcon
 
 class JavaServerManager:
-    def __init__(self, working_directory, start_script_path, server_ip="127.0.0.1", server_port=25565, max_start_time=180, name="Java Server", connection_timeout=5, rcon_port=25575, rcon_password=""):
+    def __init__(
+        self,
+        working_directory: str,
+        start_script_path: str,
+        server_ip :str = "127.0.0.1",
+        server_port: int = 25565,
+        max_start_seconds: int = 180,
+        name: str = "Java Server",
+        connection_timeout=5,
+        rcon_port=25575,
+        rcon_password=""
+    ):
         """
         Initializes the JavaServerManager instance.
 
@@ -16,7 +27,7 @@ class JavaServerManager:
         - start_script_path (str): Path to the server start script (run.bat).
         - server_ip (str): IP address of the Minecraft server.
         - server_password (str or None): RCON password for remote command execution.
-        - max_start_time (int): Maximum wait time for server startup.
+        - max_start_seconds (int): Maximum wait time for server startup before it is considered to have failed.
         - name (str): Name of the server instance.
         - connection_timeout (int): Timeout in seconds for server status checks.
         - server_port (int): The main Minecraft server port (default: 25565).
@@ -29,7 +40,7 @@ class JavaServerManager:
         self.start_script = start_script_path
         self.rcon_port = rcon_port
         self.rcon_password = rcon_password
-        self.max_start_time = max_start_time
+        self.max_start_seconds = max_start_seconds
     
     def get_online_players(self):
         """
@@ -88,7 +99,7 @@ class JavaServerManager:
             if process.is_running():
                 if self.ping() is None:
                     delta_time = math.floor(process.get_runtime())
-                    return "Starting" if delta_time <= self.max_start_time else "Anomaly"
+                    return "Starting" if delta_time <= self.max_start_seconds else "Anomaly"
                 return "Online"
         return "Offline"
         
