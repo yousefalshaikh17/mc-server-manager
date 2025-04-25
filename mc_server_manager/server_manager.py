@@ -44,14 +44,11 @@ class JavaServerManager:
         if isinstance(start_script_path, str):
             start_script_path = Path(start_script_path)
 
-        if not working_directory.exists():
-            raise FileNotFoundError('Working directory path does not exist.')
-        
-        if not start_script_path.exists():
-            raise FileNotFoundError('Server start script path does not exist.')
+        if not start_script_path.is_file():
+            raise FileNotFoundError("Working directory path is not a directory.")
         
         if not working_directory.is_dir():
-            raise ValueError("Working directory path is not a directory.")
+            raise FileNotFoundError("Working directory path is not a directory.")
 
         # JavaServer does some address checks internally to verify validity, so it is run first.
         self.server = JavaServer(server_ip, port=server_port, timeout=connection_timeout)
