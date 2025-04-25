@@ -5,6 +5,8 @@ import math
 import time
 import threading
 from mcrcon import MCRcon
+class MCServerManagerException(Exception):
+    pass
 
 class JavaServerManager:
     def __init__(
