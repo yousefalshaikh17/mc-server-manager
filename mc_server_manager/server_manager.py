@@ -5,7 +5,7 @@ import math
 import time
 import threading
 from mcrcon import MCRcon
-import os
+from pathlib import Path
 
 class MCServerManagerException(Exception):
     pass
@@ -13,8 +13,8 @@ class MCServerManagerException(Exception):
 class JavaServerManager:
     def __init__(
         self,
-        working_directory: str,
-        start_script_path: str,
+        working_directory: Path | str,
+        start_script_path: Path | str,
         server_ip :str = "127.0.0.1",
         server_port: int = 25565,
         max_start_seconds: int = 180,
@@ -27,8 +27,8 @@ class JavaServerManager:
         Initializes the JavaServerManager instance.
 
         Parameters:
-        - working_directory (str): Path to the server directory.
-        - start_script_path (str): Path to the server start script (run.bat).
+        - working_directory (Path): Path to the server directory.
+        - start_script_path (Path): Path to the server start script.
         - server_ip (str): IP address of the Minecraft server.
         - server_password (str or None): RCON password for remote command execution.
         - max_start_seconds (int): Maximum wait time for server startup before it is considered to have failed.
@@ -37,6 +37,21 @@ class JavaServerManager:
         - server_port (int): The main Minecraft server port (default: 25565).
         - rcon_port (int or None): The RCON port for remote commands (default: 25575).
         """
+        if isinstance(working_directory, str):
+            working_directory = Path(working_directory)
+
+        if isinstance(start_script_path, str):
+            start_script_path = Path(start_script_path)
+
+        if not working_directory.exists():
+            raise FileNotFoundError('Working directory path does not exist.')
+        
+        if not start_script_path.exists():
+            raise FileNotFoundError('Server start script path does not exist.')
+        
+        if not working_directory.is_dir():
+            raise ValueError("Working directory path is not a directory.")
+
         # JavaServer does some address checks internally to verify validity, so it is run first.
         self.server = JavaServer(server_ip, port=server_port, timeout=connection_timeout)
         self.name = name
@@ -49,12 +64,12 @@ class JavaServerManager:
     @classmethod
     def from_server_properties(
         cls,
-        working_directory: str,
-        start_script_path: str,
+        working_directory: Path,
+        start_script_path: Path,
         **kwargs
     ):
-        props_path = os.path.join(working_directory, "server.properties")
-        if not os.path.exists(props_path):
+        props_path = working_directory / "server.properties"
+        if not props_path.exists():
             raise FileNotFoundError(f"No server.properties found in {working_directory}")
         
         config = {}
@@ -132,9 +147,9 @@ class JavaServerManager:
         Returns:
         - list of Process objects matching the Java process running in the server directory.
         """
-        filter = {'name': 'java.exe', 'cwd': self.working_directory}
         def filter(info: dict):
-            if info['cwd'] != self.working_directory:
+
+            if info['cwd'] is None or Path(info['cwd']) != self.working_directory:
                 return False
             
             if 'java' not in info['name'].lower():
@@ -194,7 +209,7 @@ class JavaServerManager:
         if force_restart:
             self.force_stop()
 
-        subprocess.Popen(["cmd", "/c", self.start_script], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        subprocess.Popen(["cmd", "/c", str(self.start_script)], creationflags=subprocess.CREATE_NEW_CONSOLE)
         return True, "Server started."
     
     def restart(self, force_close=False, save=False):
