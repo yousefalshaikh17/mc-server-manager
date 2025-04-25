@@ -213,12 +213,12 @@ class JavaServerManager:
             subprocess.Popen(
                 ["cmd", "/c", str(self.start_script)],
                 creationflags=subprocess.CREATE_NEW_CONSOLE,
-                cwd=self.working_directory
+                cwd=str(self.working_directory)
             )
         else:
             subprocess.Popen(
-                ["java", "-jar", str(self.start_script)],
-                cwd=self.working_directory
+                ["bash", str(self.start_script)],
+                cwd=str(self.working_directory)
             )
 
         return True, "Server started."
