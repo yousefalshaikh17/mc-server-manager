@@ -15,9 +15,9 @@ class TestMinecraftServerQuery(unittest.TestCase):
 
 
         cls.manager = JavaServerManager.from_server_properties(
-            str(server_working_directory),
-            str(start_script_path)
-        )      
+            server_working_directory,
+            start_script_path
+        )     
 
     def test_ping(self):
         """

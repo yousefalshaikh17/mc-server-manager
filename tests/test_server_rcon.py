@@ -14,8 +14,8 @@ class TestMinecraftServerRCON(unittest.TestCase):
         start_script_path = server_working_directory / "server.jar"
 
         cls.manager = JavaServerManager.from_server_properties(
-            str(server_working_directory),
-            str(start_script_path)
+            server_working_directory,
+            start_script_path
         )
 
     def test_run_commands(self):
