@@ -8,6 +8,26 @@ from mcrcon import MCRcon
 from pathlib import Path
 import platform
 
+def get_start_command(start_script: Path):
+    """
+    Determines the correct command to start the server based on the script file extension.
+    Returns the appropriate command or None if unsupported.
+    """
+    script_path = str(start_script)
+
+    if platform.system() == "Windows":
+        if script_path.endswith(".bat"):
+            return ["cmd", "/c", script_path]
+        elif script_path.endswith(".jar"):
+            return ["cmd", "/c", f"java -jar {script_path}"]
+    else:
+        if script_path.endswith(".sh"):
+            return ["bash", script_path]
+        elif script_path.endswith(".jar"):
+            return ["java", "-jar", script_path]
+
+    return None
+
 class MCServerManagerException(Exception):
     pass
 
@@ -209,17 +229,16 @@ class JavaServerManager:
 
 
         # Windows & Linux support
-        if platform.system() == "Windows":
-            subprocess.Popen(
-                ["cmd", "/c", str(self.start_script)],
-                creationflags=subprocess.CREATE_NEW_CONSOLE,
-                cwd=str(self.working_directory)
-            )
-        else:
-            subprocess.Popen(
-                ["bash", str(self.start_script)],
-                cwd=str(self.working_directory)
-            )
+        start_command = get_start_command(self.start_script)
+
+        if start_command is None:
+            return False, "Unsupported script type."
+
+        subprocess.Popen(
+            start_command,
+            cwd=str(self.working_directory),
+            creationflags=subprocess.CREATE_NEW_CONSOLE if platform.system() == "Windows" else 0
+        )
 
         return True, "Server started."
     
