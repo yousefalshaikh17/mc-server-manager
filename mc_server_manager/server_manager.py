@@ -5,7 +5,28 @@ import math
 import time
 import threading
 from mcrcon import MCRcon
-import os
+from pathlib import Path
+import platform
+
+def get_start_command(start_script: Path):
+    """
+    Determines the correct command to start the server based on the script file extension.
+    Returns the appropriate command or None if unsupported.
+    """
+    script_path = str(start_script)
+
+    if platform.system() == "Windows":
+        if script_path.endswith(".bat"):
+            return ["cmd", "/c", script_path]
+        elif script_path.endswith(".jar"):
+            return ["cmd", "/c", f"java -jar {script_path}"]
+    else:
+        if script_path.endswith(".sh"):
+            return ["bash", script_path]
+        elif script_path.endswith(".jar"):
+            return ["java", "-jar", script_path]
+
+    return None
 
 class MCServerManagerException(Exception):
     pass
@@ -13,8 +34,8 @@ class MCServerManagerException(Exception):
 class JavaServerManager:
     def __init__(
         self,
-        working_directory: str,
-        start_script_path: str,
+        working_directory: Path | str,
+        start_script_path: Path | str,
         server_ip :str = "127.0.0.1",
         server_port: int = 25565,
         max_start_seconds: int = 180,
@@ -27,8 +48,8 @@ class JavaServerManager:
         Initializes the JavaServerManager instance.
 
         Parameters:
-        - working_directory (str): Path to the server directory.
-        - start_script_path (str): Path to the server start script (run.bat).
+        - working_directory (Path): Path to the server directory.
+        - start_script_path (Path): Path to the server start script.
         - server_ip (str): IP address of the Minecraft server.
         - server_password (str or None): RCON password for remote command execution.
         - max_start_seconds (int): Maximum wait time for server startup before it is considered to have failed.
@@ -37,11 +58,23 @@ class JavaServerManager:
         - server_port (int): The main Minecraft server port (default: 25565).
         - rcon_port (int or None): The RCON port for remote commands (default: 25575).
         """
+        if isinstance(working_directory, str):
+            working_directory = Path(working_directory)
+
+        if isinstance(start_script_path, str):
+            start_script_path = Path(start_script_path)
+
+        if not start_script_path.is_file():
+            raise FileNotFoundError("Working directory path is not a directory.")
+        
+        if not working_directory.is_dir():
+            raise FileNotFoundError("Working directory path is not a directory.")
+
         # JavaServer does some address checks internally to verify validity, so it is run first.
         self.server = JavaServer(server_ip, port=server_port, timeout=connection_timeout)
         self.name = name
-        self.working_directory = working_directory
-        self.start_script = start_script_path
+        self.working_directory = working_directory.resolve()
+        self.start_script = start_script_path.resolve()
         self.rcon_port = rcon_port
         self.rcon_password = rcon_password
         self.max_start_seconds = max_start_seconds
@@ -49,12 +82,15 @@ class JavaServerManager:
     @classmethod
     def from_server_properties(
         cls,
-        working_directory: str,
-        start_script_path: str,
+        working_directory: Path,
+        start_script_path: Path,
         **kwargs
     ):
-        props_path = os.path.join(working_directory, "server.properties")
-        if not os.path.exists(props_path):
+        if isinstance(working_directory, str):
+            working_directory = Path(working_directory)
+
+        props_path = working_directory / "server.properties"
+        if not props_path.exists():
             raise FileNotFoundError(f"No server.properties found in {working_directory}")
         
         config = {}
@@ -132,9 +168,9 @@ class JavaServerManager:
         Returns:
         - list of Process objects matching the Java process running in the server directory.
         """
-        filter = {'name': 'java.exe', 'cwd': self.working_directory}
         def filter(info: dict):
-            if info['cwd'] != self.working_directory:
+
+            if info['cwd'] is None or Path(info['cwd']).resolve() != self.working_directory:
                 return False
             
             if 'java' not in info['name'].lower():
@@ -194,7 +230,19 @@ class JavaServerManager:
         if force_restart:
             self.force_stop()
 
-        subprocess.Popen(["cmd", "/c", self.start_script], creationflags=subprocess.CREATE_NEW_CONSOLE)
+
+        # Windows & Linux support
+        start_command = get_start_command(self.start_script)
+
+        if start_command is None:
+            return False, "Unsupported script type."
+
+        subprocess.Popen(
+            start_command,
+            cwd=str(self.working_directory),
+            creationflags=subprocess.CREATE_NEW_CONSOLE if platform.system() == "Windows" else 0
+        )
+
         return True, "Server started."
     
     def restart(self, force_close=False, save=False):
@@ -294,12 +342,13 @@ class JavaServerManager:
             timeout_time = time.time() + 10
             processes = self.get_processes()
             while processes:
+                if time.time() > timeout_time:
+                    self.force_stop()
+
                 for process in processes:
                     if not process.is_running():
                         processes.remove(process)
                         continue
-                    if time.time() > timeout_time:
-                        process.terminate()
         
         if yield_until_closed:
             force_close()
