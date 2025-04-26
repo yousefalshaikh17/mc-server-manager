@@ -12,16 +12,16 @@ def make_suite():
     """
     suite = unittest.TestSuite()
 
-    # # First RCON is tested
+    # First RCON is tested
     suite.addTest(TestMinecraftServerRCON('test_run_commands'))
     suite.addTest(TestMinecraftServerRCON('test_save_world'))
     suite.addTest(TestMinecraftServerRCON('test_say'))
 
-    # # # Then query is tested
+    # Then query is tested
     suite.addTest(TestMinecraftServerQuery('test_ping'))
     suite.addTest(TestMinecraftServerQuery('test_get_online_players'))
 
-    # # Then process control methods are tested
+    # Then process control methods are tested
     suite.addTest(TestMinecraftServerControl('test_get_processes'))
     suite.addTest(TestMinecraftServerControl('test_get_status_online'))
     suite.addTest(TestMinecraftServerControl('test_stop'))
