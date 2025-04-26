@@ -339,12 +339,13 @@ class JavaServerManager:
             timeout_time = time.time() + 10
             processes = self.get_processes()
             while processes:
+                if time.time() > timeout_time:
+                    self.force_stop()
+
                 for process in processes:
                     if not process.is_running():
                         processes.remove(process)
                         continue
-                    if time.time() > timeout_time:
-                        process.terminate()
         
         if yield_until_closed:
             force_close()
