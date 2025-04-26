@@ -86,6 +86,9 @@ class JavaServerManager:
         start_script_path: Path,
         **kwargs
     ):
+        if isinstance(working_directory, str):
+            working_directory = Path(working_directory)
+
         props_path = working_directory / "server.properties"
         if not props_path.exists():
             raise FileNotFoundError(f"No server.properties found in {working_directory}")
