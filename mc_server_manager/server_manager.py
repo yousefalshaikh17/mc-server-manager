@@ -65,7 +65,7 @@ class JavaServerManager:
             start_script_path = Path(start_script_path)
 
         if not start_script_path.is_file():
-            raise FileNotFoundError("Working directory path is not a directory.")
+            raise FileNotFoundError("Start script path is not a file.")
         
         if not working_directory.is_dir():
             raise FileNotFoundError("Working directory path is not a directory.")
