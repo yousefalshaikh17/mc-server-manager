@@ -39,6 +39,7 @@ jobs:
             rcon.password=${{ secrets.RCON_PASSWORD }}
             enable-rcon=true
             enable-query=true
+            query.port=25574
           command: setup
 
       - name: Start Minecraft Server

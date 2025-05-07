@@ -42,7 +42,8 @@ class JavaServerManager:
         name: str = "Java Server",
         connection_timeout=5,
         rcon_port=25575,
-        rcon_password=""
+        rcon_password="",
+        query_port=25565
     ):
         """
         Initializes the JavaServerManager instance.
@@ -77,6 +78,7 @@ class JavaServerManager:
         self.start_script = start_script_path.resolve()
         self.rcon_port = rcon_port
         self.rcon_password = rcon_password
+        self.query_port = query_port
         self.max_start_seconds = max_start_seconds
     
     @classmethod
@@ -117,7 +119,8 @@ class JavaServerManager:
             name=kwargs.get("name", "Java Server"),
             connection_timeout=kwargs.get("connection_timeout", 5),
             rcon_port=rcon_port,
-            rcon_password=rcon_password
+            rcon_password=rcon_password,
+            query_port=int(kwargs.get("query_port", config.get("query.port", 25565)))
         )
 
     def __str__(self):
@@ -132,6 +135,7 @@ class JavaServerManager:
             Server Port: {self.server.address.port}
             RCON Port: {self.rcon_port}
             RCON Password: {'****' if self.rcon_password else 'Not Set'}
+            Query Port: {self.query_port}
             Max Start Time (seconds): {self.max_start_seconds}
             Connection Timeout: {self.server.timeout} seconds
             '''
@@ -144,8 +148,10 @@ class JavaServerManager:
         Returns:
         - list of str: Player names if server is available, otherwise None.
         """
+        # Temporarily using a separate server since JavaServer does not support a query port parameter and query() does not allow port parameters.
+        query_server = JavaServer(self.server.address.host, self.query_port, self.server.timeout)
         try:
-            return self.server.query().players.names
+            return query_server.query().players.names
         except:
             return None
         
