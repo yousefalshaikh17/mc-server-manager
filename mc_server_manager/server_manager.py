@@ -148,8 +148,10 @@ class JavaServerManager:
         Returns:
         - list of str: Player names if server is available, otherwise None.
         """
+        # Temporarily using a separate server since JavaServer does not support a query port parameter and query() does not allow port parameters.
+        query_server = JavaServer(self.server.address.host, self.query_port, self.server.timeout)
         try:
-            return self.server.query().players.names
+            return query_server.query().players.names
         except:
             return None
         
